@@ -718,21 +718,32 @@ func validateFlockerVolumeSource(flocker *api.FlockerVolumeSource, fldPath *fiel
 var validDownwardAPIFieldPathExpressions = sets.NewString("metadata.name", "metadata.namespace", "metadata.labels", "metadata.annotations")
 
 func validateDownwardAPIVolumeSource(downwardAPIVolume *api.DownwardAPIVolumeSource, fldPath *field.Path) field.ErrorList {
+	var refCount int
 	allErrs := field.ErrorList{}
 	for _, downwardAPIVolumeFile := range downwardAPIVolume.Items {
 		if len(downwardAPIVolumeFile.Path) == 0 {
 			allErrs = append(allErrs, field.Required(fldPath.Child("path"), ""))
 		}
 		allErrs = append(allErrs, validateVolumeSourcePath(downwardAPIVolumeFile.Path, fldPath.Child("path"))...)
+
+		refCount = 0
+
 		if downwardAPIVolumeFile.FieldRef != nil {
 			allErrs = append(allErrs, validateObjectFieldSelector(downwardAPIVolumeFile.FieldRef, &validDownwardAPIFieldPathExpressions, fldPath.Child("fieldRef"))...)
-			if downwardAPIVolumeFile.ResourceFieldRef != nil {
-				allErrs = append(allErrs, field.Invalid(fldPath, "resource", "fieldRef and resourceFieldRef can not be specified simultaneously"))
-			}
-		} else if downwardAPIVolumeFile.ResourceFieldRef != nil {
+			refCount += 1
+		}
+		if downwardAPIVolumeFile.ResourceFieldRef != nil {
 			allErrs = append(allErrs, validateContainerResourceFieldSelector(downwardAPIVolumeFile.ResourceFieldRef, &validContainerResourceFieldPathExpressions, fldPath.Child("resourceFieldRef"), true)...)
-		} else {
-			allErrs = append(allErrs, field.Required(fldPath, "one of fieldRef and resourceFieldRef is required"))
+			refCount += 1
+		}
+		if downwardAPIVolumeFile.ConfigMapRef != "" {
+			refCount += 1
+		}
+
+		if refCount == 0 {
+			allErrs = append(allErrs, field.Required(fldPath, "one of fieldRef, resourceFieldRef or configMapRef is required"))
+		} else if refCount > 1 {
+			allErrs = append(allErrs, field.Invalid(fldPath, "resource", "only one of fieldRef, resourceFieldRef or configMapRef can be specified"))
 		}
 	}
 	return allErrs

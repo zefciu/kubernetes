@@ -133,16 +133,16 @@ func (w *AtomicWriter) Write(payload map[string][]byte) error {
 		glog.Errorf("%s: error determining whether payload should be written to disk: %v", w.logContext, err)
 		return err
 	} else if !should && len(pathsToRemove) == 0 {
-		glog.V(4).Infof("%s: no update required for target directory %v", w.logContext, w.targetDir)
+		glog.V(3).Infof("%s: no update required for target directory %v", w.logContext, w.targetDir)
 		return nil
 	} else {
-		glog.V(4).Infof("%s: write required for target directory %v", w.logContext, w.targetDir)
+		glog.V(3).Infof("%s: write required for target directory %v", w.logContext, w.targetDir)
 	}
 
 	// (4)
 	tsDir, err := w.newTimestampDir()
 	if err != nil {
-		glog.V(4).Infof("%s: error creating new ts data directory: %v", w.logContext, err)
+		glog.V(3).Infof("%s: error creating new ts data directory: %v", w.logContext, err)
 		return err
 	}
 
@@ -151,7 +151,7 @@ func (w *AtomicWriter) Write(payload map[string][]byte) error {
 		glog.Errorf("%s: error writing payload to ts data directory %s: %v", w.logContext, tsDir, err)
 		return err
 	} else {
-		glog.V(4).Infof("%s: performed write of new data to ts data directory: %s", w.logContext, tsDir)
+		glog.V(3).Infof("%s: performed write of new data to ts data directory: %s", w.logContext, tsDir)
 	}
 
 	// (6)
@@ -284,6 +284,7 @@ func (w *AtomicWriter) shouldWriteFile(path string, content []byte) (bool, error
 		return false, err
 	}
 
+	glog.Infof("COMPARING %s TO %s", content, contentOnFs)
 	return (bytes.Compare(content, contentOnFs) != 0), nil
 }
 

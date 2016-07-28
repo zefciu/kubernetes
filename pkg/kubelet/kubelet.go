@@ -1026,6 +1026,7 @@ func makeMounts(pod *api.Pod, podDir string, container *api.Container, hostName,
 			glog.Warningf("Mount cannot be satisified for container %q, because the volume is missing: %q", container.Name, mount)
 			continue
 		}
+		glog.V(3).Infof("Volume: %v xxx", mount.Name)
 
 		relabelVolume := false
 		// If the volume supports SELinux and it has not been
@@ -1343,7 +1344,10 @@ func (kl *Kubelet) makeEnvironmentVariables(pod *api.Pod, container *api.Contain
 					}
 				}
 
-				format.ExpandConfigMap(configMap, pod)
+				err = format.ExpandConfigMap(configMap, pod, kl.kubeClient)
+				if err != nil {
+					return result, nil
+				}
 				runtimeVal, ok = configMap.Data[key]
 				if !ok {
 					return result, fmt.Errorf("Couldn't find key %v in ConfigMap %v/%v", key, pod.Namespace, name)

@@ -157,13 +157,8 @@ func (b *configMapVolumeMounter) SetUpAt(dir string, fsGroup *int64) error {
 		return err
 	}
 
-	//reload the pod
-	pod, err := kubeClient.Core().Pods(b.pod.Namespace).Get(b.pod.Name)
-	if err != nil {
-		glog.Errorf("Couldn't get pod%v/%v: %v", b.pod.Namespace, b.pod.Name, err)
-		return err
-	}
-	format.ExpandConfigMap(configMap, pod)
+	format.ExpandConfigMap(configMap, &b.pod, kubeClient)
+	glog.Infof("Configmap data %v", configMap.Data)
 
 	totalBytes := totalBytes(configMap)
 	glog.V(3).Infof("Received configMap %v/%v containing (%v) pieces of data, %v total bytes",
@@ -171,6 +166,7 @@ func (b *configMapVolumeMounter) SetUpAt(dir string, fsGroup *int64) error {
 		b.source.Name,
 		len(configMap.Data),
 		totalBytes)
+	glog.V(3).Infof("Pod %v has IP %v", b.pod.Name, b.pod.Status.PodIP)
 
 	payload, err := makePayload(b.source.Items, configMap)
 	if err != nil {
