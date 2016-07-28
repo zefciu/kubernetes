@@ -1343,7 +1343,10 @@ func (kl *Kubelet) makeEnvironmentVariables(pod *api.Pod, container *api.Contain
 					}
 				}
 
-				format.ExpandConfigMap(configMap, pod)
+				err = format.ExpandConfigMap(configMap, pod)
+				if err != nil {
+					return result, nil
+				}
 				runtimeVal, ok = configMap.Data[key]
 				if !ok {
 					return result, fmt.Errorf("Couldn't find key %v in ConfigMap %v/%v", key, pod.Namespace, name)
