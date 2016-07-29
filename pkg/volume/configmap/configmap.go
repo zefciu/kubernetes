@@ -163,7 +163,7 @@ func (b *configMapVolumeMounter) SetUpAt(dir string, fsGroup *int64) error {
 		glog.Errorf("Couldn't get pod%v/%v: %v", b.pod.Namespace, b.pod.Name, err)
 		return err
 	}
-	format.ExpandConfigMap(configMap, pod)
+	format.ExpandConfigMap(configMap, pod, kubeClient)
 
 	totalBytes := totalBytes(configMap)
 	glog.V(3).Infof("Received configMap %v/%v containing (%v) pieces of data, %v total bytes",

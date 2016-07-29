@@ -1343,7 +1343,7 @@ func (kl *Kubelet) makeEnvironmentVariables(pod *api.Pod, container *api.Contain
 					}
 				}
 
-				err = format.ExpandConfigMap(configMap, pod)
+				err = format.ExpandConfigMap(configMap, pod, kl.kubeClient)
 				if err != nil {
 					return result, nil
 				}

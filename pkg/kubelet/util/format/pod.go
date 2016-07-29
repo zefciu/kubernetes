@@ -25,9 +25,12 @@ import (
 
 	//"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/api"
+    clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+
 )
 
 type podHandler func(*api.Pod) string
+
 
 // PodContext wraps the Pod object and ensures only a subset of attributes
 // can be read via the
@@ -57,14 +60,25 @@ func (pc PodContext) Labels() string {
 // the templates in ConfigMap
 type MapContext struct {
 	pod *api.Pod
+    client clientset.Interface
 }
 
-func NewMapContext(pod *api.Pod) MapContext {
-	return MapContext{pod: pod}
+func NewMapContext(pod *api.Pod, client clientset.Interface) MapContext {
+    return MapContext{pod: pod, client: client}
 }
 
 func (mc MapContext) Pod() PodContext {
 	return PodContext{pod: mc.pod}
+}
+
+// GetConfigMapData finds config maps by name and returns its Data
+
+func (mc MapContext) GetConfigMapData(name string) (map[string]string, error) {
+    configmap, err :=  mc.client.Core().ConfigMaps(mc.pod.Namespace).Get(name)
+    if err != nil {
+        return nil, err
+    }
+    return configmap.Data, nil
 }
 
 // func (mc *MapContext) ConfigMap () ()
@@ -107,7 +121,7 @@ func aggregatePods(pods []*api.Pod, handler podHandler) string {
 	return fmt.Sprintf(strings.Join(podStrings, ", "))
 }
 
-func ExpandConfigMap(configMap *api.ConfigMap, pod *api.Pod) error {
+func ExpandConfigMap(configMap *api.ConfigMap, pod *api.Pod, client clientset.Interface) error {
 	// r := regexp.MustCompile("\\$\\([a-zA-Z0-9.]+\\)")
 	// mapping_funcs := map[string]func(*api.Pod) string{
 	// 	"$(status.podIP)":   func(pod *api.Pod) string { return pod.Status.PodIP },
@@ -122,7 +136,7 @@ func ExpandConfigMap(configMap *api.ConfigMap, pod *api.Pod) error {
 		if err != nil {
 			return err
 		}
-		ctx := NewMapContext(pod)
+		ctx := NewMapContext(pod, client)
 		buf := new(bytes.Buffer)
 		err = tmpl.Execute(buf, ctx)
 		configMap.Data[k] = buf.String()
