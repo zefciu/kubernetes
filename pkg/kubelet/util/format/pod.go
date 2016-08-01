@@ -25,12 +25,10 @@ import (
 
 	//"github.com/golang/glog"
 	"k8s.io/kubernetes/pkg/api"
-    clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-
+	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 )
 
 type podHandler func(*api.Pod) string
-
 
 // PodContext wraps the Pod object and ensures only a subset of attributes
 // can be read via the
@@ -59,12 +57,12 @@ func (pc PodContext) Labels() string {
 // MapContext is an object that contains all the data needed to render
 // the templates in ConfigMap
 type MapContext struct {
-	pod *api.Pod
-    client clientset.Interface
+	pod    *api.Pod
+	client clientset.Interface
 }
 
 func NewMapContext(pod *api.Pod, client clientset.Interface) MapContext {
-    return MapContext{pod: pod, client: client}
+	return MapContext{pod: pod, client: client}
 }
 
 func (mc MapContext) Pod() PodContext {
@@ -73,12 +71,13 @@ func (mc MapContext) Pod() PodContext {
 
 // GetConfigMapData finds config maps by name and returns its Data
 
-func (mc MapContext) GetConfigMapData(name string) (map[string]string, error) {
-    configmap, err :=  mc.client.Core().ConfigMaps(mc.pod.Namespace).Get(name)
-    if err != nil {
-        return nil, err
-    }
-    return configmap.Data, nil
+func (mc MapContext) ConfigMap(name string) (map[string]string, error) {
+	configmap, err := mc.client.Core().ConfigMaps(mc.pod.Namespace).Get(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return configmap.Data, nil
 }
 
 // func (mc *MapContext) ConfigMap () ()
